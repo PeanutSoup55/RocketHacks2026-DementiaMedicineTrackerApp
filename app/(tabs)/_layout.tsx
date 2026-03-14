@@ -1,13 +1,17 @@
+import { ReactNode } from "react";
 import { Tabs } from "expo-router";
-import { Platform, View } from "react-native";
+import { View } from "react-native";
 import { HapticTab } from "@/components/haptic-tab";
-import { Colors, Typography, Spacing, MinTouchTarget } from "@/constants/theme";
+import { Colors, Typography } from "@/constants/theme";
+import { MaterialIcons } from "@expo/vector-icons";
 
 export default function TabLayout() {
+
   return (
     <Tabs
       screenOptions={{
         headerShown: false,
+        tabBarHideOnKeyboard: true,
         tabBarActiveTintColor: Colors.tabActive,
         tabBarInactiveTintColor: Colors.tabInactive,
         tabBarButton: HapticTab,
@@ -15,8 +19,6 @@ export default function TabLayout() {
           backgroundColor: Colors.surface,
           borderTopColor: Colors.border,
           borderTopWidth: 1,
-          paddingBottom: Platform.OS === "ios" ? Spacing.lg : Spacing.sm,
-          height: Platform.OS === "ios" ? MinTouchTarget + 28 : MinTouchTarget + 12,
         },
         tabBarLabelStyle: {
           fontSize: Typography.bodyM,
@@ -33,13 +35,7 @@ export default function TabLayout() {
           title: "Home",
           tabBarLabel: "Home",
           tabBarIcon: ({ color }) => (
-            <View style={{ alignItems: "center", justifyContent: "center" }}>
-              {/* Simple emoji icons — swap for IconSymbol if you prefer SF Symbols */}
-              <View style={{ width: 28, height: 28, alignItems: "center", justifyContent: "center" }}>
-                {/* Using a Text emoji as icon — works cross-platform without extra deps */}
-                <TabIcon label="🏠" />
-              </View>
-            </View>
+            <MaterialIcons name="home" size={24} color={color} />
           ),
         }}
       />
@@ -48,18 +44,11 @@ export default function TabLayout() {
         options={{
           title: "Assistant",
           tabBarLabel: "Assistant",
-          tabBarIcon: () => (
-            <View style={{ width: 28, height: 28, alignItems: "center", justifyContent: "center" }}>
-              <TabIcon label="💬" />
-            </View>
-          ),
+        tabBarIcon: ({ color }) => (
+          <MaterialIcons name="chat" size={24} color={color} />
+        ),
         }}
       />
     </Tabs>
   );
-}
-
-function TabIcon({ label }: { label: string }) {
-  const { Text } = require("react-native");
-  return <Text style={{ fontSize: 24 }}>{label}</Text>;
 }

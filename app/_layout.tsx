@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { Stack } from "expo-router";
 import { StatusBar } from "expo-status-bar";
-import { View } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import AuthScreen from "@/components/AuthScreen";
 import { Colors } from "@/constants/theme";
 
@@ -23,10 +23,10 @@ export default function RootLayout() {
   // Show auth wall until logged in
   if (!userId || !patientId) {
     return (
-      <View style={{ flex: 1, backgroundColor: Colors.background }}>
+      <SafeAreaView style={{ flex: 1, backgroundColor: Colors.background }}>
         <StatusBar style="dark" />
         <AuthScreen onAuthSuccess={handleAuthSuccess} />
-      </View>
+      </SafeAreaView>
     );
   }
 

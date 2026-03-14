@@ -1,27 +1,33 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import {
-  View,
-  Text,
-  ScrollView,
-  StyleSheet,
-  TouchableOpacity,
   ActivityIndicator,
-  RefreshControl,
   Alert,
   Linking,
+  RefreshControl,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
 } from "react-native";
-import { Colors, Typography, Spacing, Radius, Shadow, MinTouchTarget } from "../constants/theme";
-import MedicationCard from "./MedicationCard";
+import {
+  Colors,
+  Radius,
+  Shadow,
+  Spacing,
+  Typography,
+} from "../constants/theme";
 import {
   DoseLogWithMed,
   Patient,
   User,
-  getDoseLogsForDate,
-  getUpcomingDoses,
-  getPatient,
   getCareTeam,
+  getDoseLogsForDate,
+  getPatient,
+  getUpcomingDoses,
   triggerPanicAlert,
 } from "../services/api";
+import MedicationCard from "./MedicationCard";
 
 interface Props {
   userId: string;
@@ -70,26 +76,39 @@ export default function HomeScreen({ userId, patientId }: Props) {
       setAllDoses(doses);
       setUpcomingDoses(upcoming);
     } catch {
-      Alert.alert("Error", "Could not load medication data. Pull down to retry.");
+      Alert.alert(
+        "Error",
+        "Could not load medication data. Pull down to retry.",
+      );
     } finally {
       setLoading(false);
       setRefreshing(false);
     }
   }, [patientId]);
 
-  useEffect(() => { loadAll(); }, [loadAll]);
+  useEffect(() => {
+    loadAll();
+  }, [loadAll]);
 
-  const onRefresh = () => { setRefreshing(true); loadAll(); };
+  const onRefresh = () => {
+    setRefreshing(true);
+    loadAll();
+  };
 
   const handleDoseChange = (updated: DoseLogWithMed) => {
     setAllDoses((prev) => prev.map((d) => (d.id === updated.id ? updated : d)));
-    setUpcomingDoses((prev) => prev.map((d) => (d.id === updated.id ? updated : d)));
+    setUpcomingDoses((prev) =>
+      prev.map((d) => (d.id === updated.id ? updated : d)),
+    );
   };
 
   const callMember = (phone: string, name: string) => {
     Alert.alert(`Call ${name}?`, phone, [
       { text: "Cancel", style: "cancel" },
-      { text: "Call", onPress: () => Linking.openURL(`tel:${phone.replace(/\D/g, "")}`) },
+      {
+        text: "Call",
+        onPress: () => Linking.openURL(`tel:${phone.replace(/\D/g, "")}`),
+      },
     ]);
   };
 
@@ -108,14 +127,14 @@ export default function HomeScreen({ userId, patientId }: Props) {
               const result = await triggerPanicAlert(patientId, userId);
               Alert.alert(
                 "✓ Alert Sent",
-                `The care team has been notified:\n\n${result.sentTo.join("\n")}`
+                `The care team has been notified:\n\n${result.sentTo.join("\n")}`,
               );
             } finally {
               setPanicLoading(false);
             }
           },
         },
-      ]
+      ],
     );
   };
 
@@ -138,12 +157,15 @@ export default function HomeScreen({ userId, patientId }: Props) {
       style={styles.root}
       contentContainerStyle={styles.content}
       refreshControl={
-        <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={Colors.primary} />
+        <RefreshControl
+          refreshing={refreshing}
+          onRefresh={onRefresh}
+          tintColor={Colors.primary}
+        />
       }
     >
       {/* ── Patient header ── */}
       <View style={styles.header}>
-        <Text style={styles.greetTxt}>{greeting()}</Text>
         <Text style={styles.patientName}>{patient?.name ?? "—"}</Text>
         <Text style={styles.dateTxt}>{displayDate()}</Text>
         {patient?.roomNumber && (
@@ -158,7 +180,11 @@ export default function HomeScreen({ userId, patientId }: Props) {
         <View style={styles.statsRow}>
           <Stat value={takenCount} label="Taken Today" color={Colors.accent} />
           <View style={styles.statDivider} />
-          <Stat value={totalCount - takenCount} label="Remaining" color={Colors.upcoming} />
+          <Stat
+            value={totalCount - takenCount}
+            label="Remaining"
+            color={Colors.upcoming}
+          />
           <View style={styles.statDivider} />
           <Stat value={totalCount} label="Total" color={Colors.textSecondary} />
         </View>
@@ -182,7 +208,9 @@ export default function HomeScreen({ userId, patientId }: Props) {
           <>
             <Text style={styles.panicIcon}>🚨</Text>
             <Text style={styles.panicTitle}>EMERGENCY ALERT</Text>
-            <Text style={styles.panicSub}>Tap to notify care team immediately</Text>
+            <Text style={styles.panicSub}>
+              Tap to notify care team immediately
+            </Text>
           </>
         )}
       </TouchableOpacity>
@@ -198,16 +226,26 @@ export default function HomeScreen({ userId, patientId }: Props) {
             accessibilityLabel={`Call ${m.name}`}
             accessibilityRole="button"
           >
-            <View style={[styles.careAvatar, { backgroundColor: m.role === "doctor" ? Colors.primary : Colors.accent }]}>
-              <Text style={styles.careEmoji}>{m.role === "doctor" ? "👨‍⚕️" : "👩‍⚕️"}</Text>
+            <View
+              style={[
+                styles.careAvatar,
+                {
+                  backgroundColor:
+                    m.role === "doctor" ? Colors.primary : Colors.accent,
+                },
+              ]}
+            >
+              <Text style={styles.careEmoji}>
+                {m.role === "doctor" ? "👨‍⚕️" : "👩‍⚕️"}
+              </Text>
             </View>
             <Text style={styles.careName}>{m.name}</Text>
-            <Text style={styles.careRole}>{m.role === "doctor" ? (m.specialty ?? "Doctor") : "Nurse"}</Text>
-            {m.phone && (
-              <Text style={styles.carePhone}>{m.phone}</Text>
-            )}
+            <Text style={styles.careRole}>
+              {m.role === "doctor" ? (m.specialty ?? "Doctor") : "Nurse"}
+            </Text>
+            {m.phone && <Text style={styles.carePhone}>{m.phone}</Text>}
             <View style={styles.callBtn}>
-              <Text style={styles.callBtnTxt}>📞  Call</Text>
+              <Text style={styles.callBtnTxt}>📞 Call</Text>
             </View>
           </TouchableOpacity>
         ))}
@@ -217,8 +255,16 @@ export default function HomeScreen({ userId, patientId }: Props) {
       <View style={styles.medHeader}>
         <Text style={styles.sectionTitle}>Medications</Text>
         <View style={styles.viewToggle}>
-          <ToggleBtn label="Next Up" active={viewMode === "upcoming"} onPress={() => setViewMode("upcoming")} />
-          <ToggleBtn label="All Day" active={viewMode === "all"} onPress={() => setViewMode("all")} />
+          <ToggleBtn
+            label="Next Up"
+            active={viewMode === "upcoming"}
+            onPress={() => setViewMode("upcoming")}
+          />
+          <ToggleBtn
+            label="All Day"
+            active={viewMode === "all"}
+            onPress={() => setViewMode("all")}
+          />
         </View>
       </View>
 
@@ -256,35 +302,61 @@ export default function HomeScreen({ userId, patientId }: Props) {
         <>
           <Text style={styles.sectionTitle}>Medical Info</Text>
           <View style={styles.infoCard}>
-            <Text style={styles.infoSectionLabel}>Conditions Being Treated</Text>
+            <Text style={styles.infoSectionLabel}>
+              Conditions Being Treated
+            </Text>
             {patient.conditions.map((c, i) => (
-              <Text key={i} style={styles.infoItem}>• {c}</Text>
+              <Text key={i} style={styles.infoItem}>
+                • {c}
+              </Text>
             ))}
             <View style={styles.infoDivider} />
             <Text style={[styles.infoSectionLabel, { color: Colors.danger }]}>
-              ⚠️  Allergies
+              ⚠️ Allergies
             </Text>
             {patient.allergies.map((a, i) => (
-              <Text key={i} style={[styles.infoItem, { color: Colors.danger }]}>• {a}</Text>
+              <Text key={i} style={[styles.infoItem, { color: Colors.danger }]}>
+                • {a}
+              </Text>
             ))}
           </View>
         </>
       )}
 
-      <View style={{ height: Spacing.xxl }} />
+      <View style={{ height: 100 }} />
     </ScrollView>
   );
 }
 
 // ── Sub-components ────────────────────────────────────────────
 
-function Stat({ value, label, color }: { value: number; label: string; color: string }) {
+function Stat({
+  value,
+  label,
+  color,
+}: {
+  value: number;
+  label: string;
+  color: string;
+}) {
   return (
     <View style={{ alignItems: "center" }}>
-      <Text style={{ fontSize: Typography.displayM, fontWeight: Typography.bold, color }}>
+      <Text
+        style={{
+          fontSize: Typography.displayM,
+          fontWeight: Typography.bold,
+          color,
+        }}
+      >
         {value}
       </Text>
-      <Text style={{ fontSize: Typography.bodyS, color: Colors.textSecondary, marginTop: 2 }}>
+      <Text
+        style={{
+          fontSize: Typography.bodyS,
+          color: Colors.textSecondary,
+          marginTop: 2,
+        }}
+      >
         {label}
       </Text>
     </View>
@@ -307,7 +379,9 @@ function ToggleBtn({
       accessibilityRole="tab"
       accessibilityState={{ selected: active }}
     >
-      <Text style={[toggleTxtStyle, active && toggleTxtActiveStyle]}>{label}</Text>
+      <Text style={[toggleTxtStyle, active && toggleTxtActiveStyle]}>
+        {label}
+      </Text>
     </TouchableOpacity>
   );
 }
@@ -327,29 +401,81 @@ const toggleTxtStyle: import("react-native").TextStyle = {
   color: Colors.textMuted,
   fontWeight: Typography.semibold,
 };
-const toggleTxtActiveStyle: import("react-native").TextStyle = { color: Colors.primary };
+const toggleTxtActiveStyle: import("react-native").TextStyle = {
+  color: Colors.primary,
+};
 
 const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: Colors.background },
-  content: { padding: Spacing.md, paddingTop: Spacing.lg },
-  loader: { flex: 1, justifyContent: "center", alignItems: "center", backgroundColor: Colors.background, gap: Spacing.md },
+  content: { padding: Spacing.md, paddingTop: 60 },
+  loader: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: Colors.background,
+    gap: Spacing.md,
+  },
   loaderText: { fontSize: Typography.bodyL, color: Colors.textSecondary },
 
   // Header
   header: { marginBottom: Spacing.lg },
   greetTxt: { fontSize: Typography.bodyL, color: Colors.textSecondary },
-  patientName: { fontSize: Typography.displayXL, fontWeight: Typography.bold, color: Colors.primary, lineHeight: Typography.displayXL * 1.2 },
-  dateTxt: { fontSize: Typography.bodyM, color: Colors.textMuted, marginTop: Spacing.xs },
-  roomBadge: { backgroundColor: Colors.primary + "20", borderRadius: Radius.full, paddingHorizontal: Spacing.md, paddingVertical: 4, alignSelf: "flex-start", marginTop: Spacing.sm },
-  roomBadgeTxt: { fontSize: Typography.bodyS, fontWeight: Typography.semibold, color: Colors.primary },
+  patientName: {
+    fontSize: Typography.displayXL,
+    fontWeight: Typography.bold,
+    color: Colors.primary,
+    lineHeight: Typography.displayXL * 1.2,
+  },
+  dateTxt: {
+    fontSize: Typography.bodyM,
+    color: Colors.textMuted,
+    marginTop: Spacing.xs,
+  },
+  roomBadge: {
+    backgroundColor: Colors.primary + "20",
+    borderRadius: Radius.full,
+    paddingHorizontal: Spacing.md,
+    paddingVertical: 4,
+    alignSelf: "flex-start",
+    marginTop: Spacing.sm,
+  },
+  roomBadgeTxt: {
+    fontSize: Typography.bodyS,
+    fontWeight: Typography.semibold,
+    color: Colors.primary,
+  },
 
   // Progress
-  progressCard: { backgroundColor: Colors.surface, borderRadius: Radius.lg, padding: Spacing.lg, marginBottom: Spacing.lg, ...Shadow.card },
-  statsRow: { flexDirection: "row", justifyContent: "space-around", marginBottom: Spacing.md },
+  progressCard: {
+    backgroundColor: Colors.surface,
+    borderRadius: Radius.lg,
+    padding: Spacing.lg,
+    marginBottom: Spacing.lg,
+    ...Shadow.card,
+  },
+  statsRow: {
+    flexDirection: "row",
+    justifyContent: "space-around",
+    marginBottom: Spacing.md,
+  },
   statDivider: { width: 1, backgroundColor: Colors.border },
-  barTrack: { height: 12, backgroundColor: Colors.surfaceAlt, borderRadius: Radius.full, overflow: "hidden" },
-  barFill: { height: "100%", backgroundColor: Colors.accent, borderRadius: Radius.full },
-  barLabel: { fontSize: Typography.bodyS, color: Colors.textMuted, marginTop: Spacing.xs, textAlign: "center" },
+  barTrack: {
+    height: 12,
+    backgroundColor: Colors.surfaceAlt,
+    borderRadius: Radius.full,
+    overflow: "hidden",
+  },
+  barFill: {
+    height: "100%",
+    backgroundColor: Colors.accent,
+    borderRadius: Radius.full,
+  },
+  barLabel: {
+    fontSize: Typography.bodyS,
+    color: Colors.textMuted,
+    marginTop: Spacing.xs,
+    textAlign: "center",
+  },
 
   // Panic
   panic: {
@@ -364,37 +490,136 @@ const styles = StyleSheet.create({
   },
   panicLoading: { opacity: 0.75 },
   panicIcon: { fontSize: 44, marginBottom: Spacing.xs },
-  panicTitle: { fontSize: Typography.displayM, fontWeight: Typography.bold, color: Colors.textOnDark, letterSpacing: 1.5 },
-  panicSub: { fontSize: Typography.bodyM, color: Colors.textOnDark + "BB", marginTop: 4 },
+  panicTitle: {
+    fontSize: Typography.displayM,
+    fontWeight: Typography.bold,
+    color: Colors.textOnDark,
+    letterSpacing: 1.5,
+  },
+  panicSub: {
+    fontSize: Typography.bodyM,
+    color: Colors.textOnDark + "BB",
+    marginTop: 4,
+  },
 
   // Section
-  sectionTitle: { fontSize: Typography.displayM, fontWeight: Typography.bold, color: Colors.textPrimary, marginBottom: Spacing.sm },
+  sectionTitle: {
+    fontSize: Typography.displayM,
+    fontWeight: Typography.bold,
+    color: Colors.textPrimary,
+    marginBottom: Spacing.sm,
+  },
 
   // Care team
   careRow: { flexDirection: "row", gap: Spacing.md, marginBottom: Spacing.xl },
-  careCard: { flex: 1, backgroundColor: Colors.surface, borderRadius: Radius.lg, padding: Spacing.md, alignItems: "center", ...Shadow.card },
-  careAvatar: { width: 64, height: 64, borderRadius: Radius.full, alignItems: "center", justifyContent: "center", marginBottom: Spacing.sm },
+  careCard: {
+    flex: 1,
+    backgroundColor: Colors.surface,
+    borderRadius: Radius.lg,
+    padding: Spacing.md,
+    alignItems: "center",
+    ...Shadow.card,
+  },
+  careAvatar: {
+    width: 64,
+    height: 64,
+    borderRadius: Radius.full,
+    alignItems: "center",
+    justifyContent: "center",
+    marginBottom: Spacing.sm,
+  },
   careEmoji: { fontSize: 30 },
-  careName: { fontSize: Typography.bodyM, fontWeight: Typography.bold, color: Colors.textPrimary, textAlign: "center" },
-  careRole: { fontSize: Typography.bodyS, color: Colors.textSecondary, textAlign: "center", marginBottom: 2 },
-  carePhone: { fontSize: Typography.bodyS, color: Colors.textMuted, textAlign: "center", marginBottom: Spacing.sm },
-  callBtn: { backgroundColor: Colors.primary + "18", borderRadius: Radius.md, paddingVertical: Spacing.sm, paddingHorizontal: Spacing.md, minHeight: 44, justifyContent: "center" },
-  callBtnTxt: { fontSize: Typography.bodyM, color: Colors.primary, fontWeight: Typography.semibold },
+  careName: {
+    fontSize: Typography.bodyM,
+    fontWeight: Typography.bold,
+    color: Colors.textPrimary,
+    textAlign: "center",
+  },
+  careRole: {
+    fontSize: Typography.bodyS,
+    color: Colors.textSecondary,
+    textAlign: "center",
+    marginBottom: 2,
+  },
+  carePhone: {
+    fontSize: Typography.bodyS,
+    color: Colors.textMuted,
+    textAlign: "center",
+    marginBottom: Spacing.sm,
+  },
+  callBtn: {
+    backgroundColor: Colors.primary + "18",
+    borderRadius: Radius.md,
+    paddingVertical: Spacing.sm,
+    paddingHorizontal: Spacing.md,
+    minHeight: 44,
+    justifyContent: "center",
+  },
+  callBtnTxt: {
+    fontSize: Typography.bodyM,
+    color: Colors.primary,
+    fontWeight: Typography.semibold,
+  },
 
   // Med header
-  medHeader: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: Spacing.xs },
-  viewToggle: { flexDirection: "row", backgroundColor: Colors.surfaceAlt, borderRadius: Radius.md, padding: 3 },
-  medSubtitle: { fontSize: Typography.bodyM, color: Colors.textMuted, marginBottom: Spacing.md },
+  medHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    marginBottom: Spacing.xs,
+  },
+  viewToggle: {
+    flexDirection: "row",
+    backgroundColor: Colors.surfaceAlt,
+    borderRadius: Radius.md,
+    padding: 3,
+  },
+  medSubtitle: {
+    fontSize: Typography.bodyM,
+    color: Colors.textMuted,
+    marginBottom: Spacing.md,
+  },
 
   // Empty
   empty: { alignItems: "center", paddingVertical: Spacing.xxl },
   emptyIcon: { fontSize: 72, marginBottom: Spacing.md },
-  emptyTitle: { fontSize: Typography.displayM, fontWeight: Typography.bold, color: Colors.accent, marginBottom: Spacing.sm },
-  emptyText: { fontSize: Typography.bodyL, color: Colors.textSecondary, textAlign: "center", lineHeight: Typography.bodyL * 1.6, maxWidth: 280 },
+  emptyTitle: {
+    fontSize: Typography.displayM,
+    fontWeight: Typography.bold,
+    color: Colors.accent,
+    marginBottom: Spacing.sm,
+  },
+  emptyText: {
+    fontSize: Typography.bodyL,
+    color: Colors.textSecondary,
+    textAlign: "center",
+    lineHeight: Typography.bodyL * 1.6,
+    maxWidth: 280,
+  },
 
   // Medical info
-  infoCard: { backgroundColor: Colors.surface, borderRadius: Radius.lg, padding: Spacing.lg, marginBottom: Spacing.xl, ...Shadow.card },
-  infoSectionLabel: { fontSize: Typography.bodyL, fontWeight: Typography.bold, color: Colors.textPrimary, marginBottom: Spacing.sm },
-  infoItem: { fontSize: Typography.bodyM, color: Colors.textSecondary, lineHeight: Typography.bodyM * 1.6, marginBottom: 4 },
-  infoDivider: { height: 1, backgroundColor: Colors.border, marginVertical: Spacing.md },
+  infoCard: {
+    backgroundColor: Colors.surface,
+    borderRadius: Radius.lg,
+    padding: Spacing.lg,
+    marginBottom: Spacing.xl,
+    ...Shadow.card,
+  },
+  infoSectionLabel: {
+    fontSize: Typography.bodyL,
+    fontWeight: Typography.bold,
+    color: Colors.textPrimary,
+    marginBottom: Spacing.sm,
+  },
+  infoItem: {
+    fontSize: Typography.bodyM,
+    color: Colors.textSecondary,
+    lineHeight: Typography.bodyM * 1.6,
+    marginBottom: 4,
+  },
+  infoDivider: {
+    height: 1,
+    backgroundColor: Colors.border,
+    marginVertical: Spacing.md,
+  },
 });
