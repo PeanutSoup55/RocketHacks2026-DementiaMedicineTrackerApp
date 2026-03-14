@@ -1,17 +1,16 @@
 import React from "react";
 import { View, StyleSheet } from "react-native";
-import HomeScreen from "@/components/HomeScreen";
-import { globalUserId, globalPatientId } from "@/app/_layout";
+import ChatbotScreen from "@/components/ChatbotScreen";
+import { globalPatientId } from "@/app/_layout";
 import { Colors } from "@/constants/theme";
 
-export default function HomeTab() {
-  // Falls back to dummy IDs during layout testing — remove fallbacks when auth is live
-  const userId = globalUserId ?? "usr_002";
+export default function ChatTab() {
+  // Falls back to dummy ID during layout testing — remove fallback when auth is live
   const patientId = globalPatientId ?? "pat_001";
 
   return (
     <View style={styles.container}>
-      <HomeScreen userId={userId} patientId={patientId} />
+      <ChatbotScreen patientId={patientId} />
     </View>
   );
 }
