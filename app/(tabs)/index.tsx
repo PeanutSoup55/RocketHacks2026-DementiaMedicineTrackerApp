@@ -1,13 +1,22 @@
-import React from "react";
+import React, { useEffect } from "react";
 import { View, StyleSheet } from "react-native";
+import { useRouter } from "expo-router";
 import HomeScreen from "@/components/HomeScreen";
-import { globalUserId, globalPatientId } from "@/app/_layout";
+import { globalUserId, globalPatientId, globalUserRole } from "@/app/_layout";
 import { Colors } from "@/constants/theme";
 
 export default function HomeTab() {
-  // Falls back to dummy IDs during layout testing — remove fallbacks when auth is live
-  const userId = globalUserId ?? "usr_002";
-  const patientId = globalPatientId ?? "pat_001";
+  const router = useRouter();
+
+  // Redirect doctors to their own tab group
+  useEffect(() => {
+    if (globalUserRole === "doctor") {
+      router.replace("/(doctor-tabs)");
+    }
+  }, []);
+
+  const userId    = globalUserId    ?? "";
+  const patientId = globalPatientId ?? "";
 
   return (
     <View style={styles.container}>
@@ -17,8 +26,5 @@ export default function HomeTab() {
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: Colors.background,
-  },
+  container: { flex: 1, backgroundColor: Colors.background },
 });

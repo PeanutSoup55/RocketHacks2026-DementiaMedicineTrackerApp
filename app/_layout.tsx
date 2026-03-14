@@ -8,28 +8,31 @@ import { doc, getDoc } from "firebase/firestore";
 import { auth, db } from "@/config/firebase";
 import AuthScreen from "@/components/AuthScreen";
 import { Colors } from "@/constants/theme";
+import type { UserRole } from "@/services/api";
 
 export let globalUserId: string | null = null;
 export let globalPatientId: string | null = null;
+export let globalUserRole: UserRole | null = null;
 
 export default function RootLayout() {
-  const [userId, setUserId] = useState<string | null>(null);
+  const [userId, setUserId]       = useState<string | null>(null);
   const [patientId, setPatientId] = useState<string | null>(null);
-  const [checking, setChecking] = useState(true); // true while Firebase checks persisted session
+  const [role, setRole]           = useState<UserRole | null>(null);
+  const [checking, setChecking]   = useState(true);
 
-  // Listen to Firebase auth state — handles auto-login on app restart
   useEffect(() => {
     const unsub = onAuthStateChanged(auth, async (firebaseUser) => {
       if (firebaseUser) {
-        // User is already logged in — fetch their patientId from Firestore
         try {
           const snap = await getDoc(doc(db, "Medtrack_Users", firebaseUser.uid));
           if (snap.exists()) {
-            const pid = snap.data().patientId as string;
-            globalUserId = firebaseUser.uid;
-            globalPatientId = pid;
+            const data = snap.data();
+            globalUserId    = firebaseUser.uid;
+            globalPatientId = data.patientId as string;
+            globalUserRole  = data.role as UserRole;
             setUserId(firebaseUser.uid);
-            setPatientId(pid);
+            setPatientId(data.patientId as string);
+            setRole(data.role as UserRole);
           }
         } catch (e) {
           console.error("Auth state restore failed:", e);
@@ -37,17 +40,18 @@ export default function RootLayout() {
       }
       setChecking(false);
     });
-    return unsub; // unsubscribe on unmount
+    return unsub;
   }, []);
 
-  const handleAuthSuccess = (uid: string, pid: string) => {
-    globalUserId = uid;
+  const handleAuthSuccess = (uid: string, pid: string, userRole: UserRole) => {
+    globalUserId    = uid;
     globalPatientId = pid;
+    globalUserRole  = userRole;
     setUserId(uid);
     setPatientId(pid);
+    setRole(userRole);
   };
 
-  // Show spinner while Firebase checks for a persisted session
   if (checking) {
     return (
       <View style={{ flex: 1, justifyContent: "center", alignItems: "center", backgroundColor: Colors.background }}>
@@ -56,8 +60,7 @@ export default function RootLayout() {
     );
   }
 
-  // Show auth screen if not logged in
-  if (!userId || !patientId) {
+  if (!userId || !patientId || !role) {
     return (
       <SafeAreaView style={{ flex: 1, backgroundColor: Colors.background }}>
         <StatusBar style="dark" />
@@ -70,8 +73,11 @@ export default function RootLayout() {
     <>
       <StatusBar style="light" />
       <Stack>
-        <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-        <Stack.Screen name="modal" options={{ presentation: "modal", title: "Modal" }} />
+        {/* Nurse/caregiver app */}
+        <Stack.Screen name="(tabs)"        options={{ headerShown: false }} />
+        {/* Doctor app */}
+        <Stack.Screen name="(doctor-tabs)" options={{ headerShown: false }} />
+        <Stack.Screen name="modal"         options={{ presentation: "modal", title: "Modal" }} />
       </Stack>
     </>
   );

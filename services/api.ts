@@ -422,3 +422,176 @@ export async function triggerPanicAlert(
     return { alertId: `alert_${Date.now()}`, sentTo: [] };
   }
 }
+
+// ============================================================
+// DOCTOR — Patient management
+// ============================================================
+
+/**
+ * GET all patients assigned to a doctor
+ * Queries Medtrack_Patients where doctorId == doctorUid
+ */
+export async function getDoctorPatients(doctorUid: string): Promise<Patient[]> {
+  try {
+    const q = query(
+      collection(db, "Medtrack_Patients"),
+      where("doctorId", "==", doctorUid)
+    );
+    const snap = await getDocs(q);
+    return snap.docs.map((d) => ({ id: d.id, ...d.data() } as Patient));
+  } catch (e) {
+    console.error("getDoctorPatients failed:", e);
+    return [];
+  }
+}
+
+/**
+ * POST — Create a new patient and assign to doctor
+ */
+export async function createPatient(params: {
+  name: string;
+  dateOfBirth: string;
+  roomNumber: string;
+  conditions: string[];
+  allergies: string[];
+  emergencyContactName: string;
+  emergencyContactPhone: string;
+  doctorUid: string;
+}): Promise<Patient | null> {
+  try {
+    const ref = doc(collection(db, "Medtrack_Patients"));
+    const newPatient = {
+      name: params.name,
+      dateOfBirth: params.dateOfBirth,
+      roomNumber: params.roomNumber,
+      profilePhoto: null,
+      conditions: params.conditions,
+      allergies: params.allergies,
+      emergencyContact: {
+        name: params.emergencyContactName,
+        phone: params.emergencyContactPhone,
+      },
+      doctorId: params.doctorUid,
+      createdAt: serverTimestamp(),
+    };
+    await setDoc(ref, newPatient);
+    return { id: ref.id, ...newPatient } as unknown as Patient;
+  } catch (e) {
+    console.error("createPatient failed:", e);
+    return null;
+  }
+}
+
+// ============================================================
+// DOCTOR — Medication management
+// ============================================================
+
+/**
+ * POST — Create a new medication and prescribe to patient
+ */
+export async function createMedication(params: {
+  patientId: string;
+  name: string;
+  brandName: string;
+  dosage: string;
+  form: string;
+  color: string;
+  colorName: string;
+  treatsCondition: string;
+  sideEffects: string[];
+  instructions: string;
+  prescribedBy: string;
+}): Promise<Medication | null> {
+  try {
+    const ref = doc(collection(db, "Medtrack_Medications"));
+    const newMed = { ...params, active: true, createdAt: serverTimestamp() };
+    await setDoc(ref, newMed);
+    return { id: ref.id, ...newMed } as unknown as Medication;
+  } catch (e) {
+    console.error("createMedication failed:", e);
+    return null;
+  }
+}
+
+/**
+ * PATCH — Update an existing medication
+ */
+export async function updateMedication(
+  medicationId: string,
+  updates: Partial<Omit<Medication, "id">>
+): Promise<Medication | null> {
+  try {
+    const ref = doc(db, "Medtrack_Medications", medicationId);
+    await updateDoc(ref, { ...updates, updatedAt: serverTimestamp() });
+    const snap = await getDoc(ref);
+    return { id: snap.id, ...snap.data() } as Medication;
+  } catch (e) {
+    console.error("updateMedication failed:", e);
+    return null;
+  }
+}
+
+/**
+ * PATCH — Deactivate (soft delete) a medication
+ */
+export async function deactivateMedication(medicationId: string): Promise<boolean> {
+  try {
+    await updateDoc(doc(db, "Medtrack_Medications", medicationId), {
+      active: false,
+      deactivatedAt: serverTimestamp(),
+    });
+    return true;
+  } catch (e) {
+    console.error("deactivateMedication failed:", e);
+    return false;
+  }
+}
+
+// ============================================================
+// DOCTOR — Dose schedule management
+// ============================================================
+
+/**
+ * POST — Create a dose log entry (schedule a dose)
+ */
+export async function createDoseLog(params: {
+  patientId: string;
+  medicationId: string;
+  scheduledTime: string;
+  scheduledDate: string;
+  notes?: string;
+}): Promise<DoseLog | null> {
+  try {
+    const ref = doc(collection(db, "Medtrack_Doselogs"));
+    const newDose = {
+      patientId: params.patientId,
+      medicationId: params.medicationId,
+      scheduledTime: params.scheduledTime,
+      scheduledDate: params.scheduledDate,
+      notes: params.notes ?? null,
+      taken: false,
+      takenAt: null,
+      administeredBy: null,
+      createdAt: serverTimestamp(),
+    };
+    await setDoc(ref, newDose);
+    return { id: ref.id, ...newDose } as unknown as DoseLog;
+  } catch (e) {
+    console.error("createDoseLog failed:", e);
+    return null;
+  }
+}
+
+/**
+ * DELETE — Remove a scheduled dose
+ */
+export async function deleteDoseLog(doseLogId: string): Promise<boolean> {
+  try {
+    const { deleteDoc } = await import("firebase/firestore");
+    await deleteDoc(doc(db, "Medtrack_Doselogs", doseLogId));
+    return true;
+  } catch (e) {
+    console.error("deleteDoseLog failed:", e);
+    return false;
+  }
+}

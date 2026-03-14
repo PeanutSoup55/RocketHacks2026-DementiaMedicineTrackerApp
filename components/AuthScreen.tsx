@@ -14,8 +14,10 @@ import {
 import { Colors, Typography, Spacing, Radius, Shadow, MinTouchTarget } from "../constants/theme";
 import { loginUser, registerUser } from "../services/api";
 
+import type { UserRole } from "../services/api";
+
 interface Props {
-  onAuthSuccess: (userId: string, patientId: string) => void;
+  onAuthSuccess: (userId: string, patientId: string, role: UserRole) => void;
 }
 
 export default function AuthScreen({ onAuthSuccess }: Props) {
@@ -41,7 +43,7 @@ export default function AuthScreen({ onAuthSuccess }: Props) {
     try {
       const result = await loginUser(email.trim(), password);
       if (result) {
-        onAuthSuccess(result.user.id, result.patient.id);
+        onAuthSuccess(result.user.id, result.patient.id, result.user.role);
       } else {
         Alert.alert("Login Failed", "Incorrect email or password. Please try again.");
       }
@@ -67,7 +69,7 @@ export default function AuthScreen({ onAuthSuccess }: Props) {
         role: "nurse",
       });
       if (result) {
-        onAuthSuccess(result.user.id, result.patient.id);
+        onAuthSuccess(result.user.id, result.patient.id, result.user.role);
       } else {
         Alert.alert(
           "Registration Failed",
