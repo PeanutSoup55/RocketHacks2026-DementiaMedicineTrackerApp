@@ -14,12 +14,13 @@ import {
 
 const API_BASE = "https://blhqdgjflc.execute-api.us-east-1.amazonaws.com/default/medtrack-api";
 
+// Set this to your AWS endpoint when the backend is ready
+// const API_BASE = "https://your-api.execute-api.us-east-1.amazonaws.com/prod";
+
+// ---- Types ----
 const headers = {
   "Content-Type": "application/json",
 };
-
-// ---- Types ----
-
 export type UserRole = "doctor" | "nurse";
 
 export interface User {
