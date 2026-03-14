@@ -15,7 +15,7 @@ import {
 } from "../data/DummyData"
 
 // Set this to your AWS endpoint when the backend is ready
-// const API_BASE = "https://your-api.execute-api.us-east-1.amazonaws.com/prod";
+const API_BASE = "https://blhqdgjflc.execute-api.us-east-1.amazonaws.com/default/medtrack-api";
 
 // ---- Types matching your four DB tables ----
 
