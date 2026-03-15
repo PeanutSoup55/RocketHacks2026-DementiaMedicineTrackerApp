@@ -200,7 +200,7 @@ export default function HomeScreen({ userId, patientId }: Props) {
       {/* ── Care team ── */}
       <Text style={styles.sectionTitle}>Care Team</Text>
       <View style={styles.careRow}>
-        {careTeam.map((m) => (
+        {careTeam.filter((m) => m.role === "doctor").map((m) => (
           <TouchableOpacity
             key={m.id}
             style={styles.careCard}
@@ -281,8 +281,6 @@ export default function HomeScreen({ userId, patientId }: Props) {
         </>
       )}
 
-      {/* DEV ONLY — remove before production */}
-      <SeedButton patientId={patientId} doctorUid={userId} />
       <View style={{ height: 100 }} />
     </ScrollView>
   );

@@ -10,10 +10,20 @@ import {
   Alert,
   KeyboardAvoidingView,
   Platform,
+  Modal,
+  Image,
 } from "react-native";
+import * as ImagePicker from "expo-image-picker";
+import { Ionicons } from "@expo/vector-icons";
 import { Colors, Typography, Spacing, Radius, Shadow, MinTouchTarget } from "../constants/theme";
 import { loginUser, registerPatient } from "../services/api";
+import DoctorApplicationModal from "./DoctorApplicationModal";
 import type { UserRole } from "../services/api";
+
+// ---- EmailJS config ----
+const EMAILJS_SERVICE_ID  = "service_q1w59tm";
+const EMAILJS_TEMPLATE_ID = "template_n1wp9hh";
+const EMAILJS_PUBLIC_KEY  = "ZXR66beteMu3B0cEi";
 
 interface Props {
   onAuthSuccess: (userId: string, patientId: string, role: UserRole) => void;
@@ -24,6 +34,7 @@ type Mode = "login" | "register-patient";
 export default function AuthScreen({ onAuthSuccess }: Props) {
   const [mode, setMode]       = useState<Mode>("login");
   const [loading, setLoading] = useState(false);
+  const [showApply, setShowApply] = useState(false);
 
   // Login
   const [email, setEmail]       = useState("");
@@ -71,10 +82,7 @@ export default function AuthScreen({ onAuthSuccess }: Props) {
       if (result) {
         onAuthSuccess(result.user.id, result.patient.id, result.user.role);
       } else {
-        Alert.alert(
-          "Registration Failed",
-          "Could not find a patient record with that ID. Please check with your doctor."
-        );
+        Alert.alert("Registration Failed", "Could not find a patient record with that ID. Please check with your doctor.");
       }
     } catch {
       Alert.alert("Connection Error", "Could not reach the server.");
@@ -109,12 +117,10 @@ export default function AuthScreen({ onAuthSuccess }: Props) {
         </View>
 
         <View style={styles.card}>
-
           {/* ── LOGIN ── */}
           {mode === "login" && (
             <>
               <Text style={styles.cardTitle}>Welcome Back</Text>
-
               <Label text="Email Address" />
               <TextInput
                 style={styles.input}
@@ -127,7 +133,6 @@ export default function AuthScreen({ onAuthSuccess }: Props) {
                 autoCorrect={false}
                 returnKeyType="next"
               />
-
               <Label text="Password" />
               <TextInput
                 style={styles.input}
@@ -139,7 +144,6 @@ export default function AuthScreen({ onAuthSuccess }: Props) {
                 returnKeyType="done"
                 onSubmitEditing={handleLogin}
               />
-
               <PrimaryButton label="Sign In" loading={loading} onPress={handleLogin} />
             </>
           )}
@@ -151,7 +155,6 @@ export default function AuthScreen({ onAuthSuccess }: Props) {
               <Text style={styles.hint}>
                 You'll need your Patient ID from your doctor to get started.
               </Text>
-
               <Label text="Your Full Name" />
               <TextInput
                 style={styles.input}
@@ -161,7 +164,6 @@ export default function AuthScreen({ onAuthSuccess }: Props) {
                 placeholderTextColor={Colors.textMuted}
                 autoCapitalize="words"
               />
-
               <Label text="Your Email Address" />
               <TextInput
                 style={styles.input}
@@ -173,7 +175,6 @@ export default function AuthScreen({ onAuthSuccess }: Props) {
                 autoCapitalize="none"
                 autoCorrect={false}
               />
-
               <Label text="Create a Password" />
               <TextInput
                 style={styles.input}
@@ -183,11 +184,8 @@ export default function AuthScreen({ onAuthSuccess }: Props) {
                 placeholderTextColor={Colors.textMuted}
                 secureTextEntry
               />
-
               <Label text="Your Patient ID" />
-              <Text style={styles.subHint}>
-                Your doctor will give you this ID.
-              </Text>
+              <Text style={styles.subHint}>Your doctor will give you this ID.</Text>
               <TextInput
                 style={styles.input}
                 value={patientId}
@@ -199,16 +197,33 @@ export default function AuthScreen({ onAuthSuccess }: Props) {
                 returnKeyType="done"
                 onSubmitEditing={handlePatientRegister}
               />
-
               <PrimaryButton label="Create Account" loading={loading} onPress={handlePatientRegister} />
             </>
           )}
-
         </View>
+
+        {/* ── SUBTLE DOCTOR APPLY BUTTON ── */}
+        <TouchableOpacity
+          style={styles.applyBtn}
+          onPress={() => setShowApply(true)}
+          accessibilityLabel="Apply for doctor position"
+        >
+          <Text style={styles.applyBtnTxt}>Are you a doctor? Apply here</Text>
+        </TouchableOpacity>
+
+        <View style={{ height: Spacing.xl }} />
       </ScrollView>
+
+      {/* Doctor Application Modal */}
+      <DoctorApplicationModal
+        visible={showApply}
+        onClose={() => setShowApply(false)}
+      />
     </KeyboardAvoidingView>
   );
 }
+
+// ---- Sub-components ----
 
 function ToggleBtn({ label, active, onPress }: { label: string; active: boolean; onPress: () => void }) {
   return (
@@ -284,6 +299,7 @@ const styles = StyleSheet.create({
     fontSize: Typography.bodyL, color: Colors.textPrimary,
     backgroundColor: Colors.background, minHeight: MinTouchTarget,
   },
+  inputMulti: { minHeight: 100, textAlignVertical: "top" },
 
   primaryBtn: {
     backgroundColor: Colors.primary, borderRadius: Radius.md,
@@ -293,4 +309,49 @@ const styles = StyleSheet.create({
   },
   primaryBtnDisabled: { opacity: 0.6 },
   primaryBtnTxt: { fontSize: Typography.bodyXL, fontWeight: Typography.bold, color: Colors.textOnDark, letterSpacing: 0.5 },
+
+  // Subtle apply button — deliberately small and low-contrast for elderly UX
+  applyBtn: {
+    alignSelf: "center",
+    marginTop: Spacing.xl,
+    paddingVertical: Spacing.sm,
+    paddingHorizontal: Spacing.md,
+  },
+  applyBtnTxt: {
+    fontSize: Typography.tiny,
+    color: Colors.textMuted,
+    textDecorationLine: "underline",
+  },
+
+  // Modal
+  modal: { flex: 1, backgroundColor: Colors.background },
+  modalContent: { padding: Spacing.lg, paddingTop: Spacing.xl },
+  modalHeader: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: Spacing.sm },
+  modalTitle: { fontSize: Typography.displayM, fontWeight: Typography.bold, color: Colors.textPrimary },
+  modalCloseBtn: { width: MinTouchTarget, height: MinTouchTarget, alignItems: "center", justifyContent: "center" },
+  modalSubtitle: { fontSize: Typography.bodyM, color: Colors.textSecondary, lineHeight: Typography.bodyM * 1.6, marginBottom: Spacing.sm },
+
+  // Image picker
+  imageGrid: { flexDirection: "row", flexWrap: "wrap", gap: Spacing.sm, marginTop: Spacing.xs, marginBottom: Spacing.md },
+  imageThumb: { width: 100, alignItems: "center" },
+  thumbImg: { width: 100, height: 100, borderRadius: Radius.md, borderWidth: 1, borderColor: Colors.border },
+  thumbRemove: { position: "absolute", top: -8, right: -8 },
+  thumbLabel: { fontSize: Typography.tiny, color: Colors.textMuted, marginTop: 4, textAlign: "center", maxWidth: 100 },
+  addImageBtn: {
+    width: 100, height: 100, borderRadius: Radius.md,
+    borderWidth: 2, borderColor: Colors.border, borderStyle: "dashed",
+    alignItems: "center", justifyContent: "center", gap: 4,
+  },
+  addImageTxt: { fontSize: Typography.tiny, color: Colors.primaryLight, textAlign: "center" },
+
+  // Submit button
+  submitBtn: {
+    backgroundColor: Colors.accent, borderRadius: Radius.lg,
+    paddingVertical: Spacing.lg, alignItems: "center",
+    marginTop: Spacing.xl, flexDirection: "row",
+    justifyContent: "center", gap: Spacing.sm,
+    minHeight: MinTouchTarget + 8, ...Shadow.card,
+  },
+  submitBtnDisabled: { opacity: 0.6 },
+  submitBtnTxt: { fontSize: Typography.bodyXL, fontWeight: Typography.bold, color: Colors.textOnDark },
 });
