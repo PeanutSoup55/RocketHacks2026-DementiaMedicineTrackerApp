@@ -22,6 +22,8 @@ import {
   Medication,
   DoseLogWithMed,
 } from "@/services/api";
+import { Ionicons } from "@expo/vector-icons";
+import { scheduleDoseNotification } from "@/services/notifications";
 
 const TIMES = [
   "06:00", "07:00", "08:00", "09:00", "10:00", "11:00",
@@ -87,10 +89,13 @@ export default function DoctorScheduleTab() {
         notes:         notes.trim() || undefined,
       });
       if (newDose) {
-        setDoses((prev) => [...prev, { ...newDose, medication: selectedMed }]
+        const doseWithMed = { ...newDose, medication: selectedMed };
+        setDoses((prev) => [...prev, doseWithMed]
           .sort((a, b) => a.scheduledTime.localeCompare(b.scheduledTime)));
         setNotes("");
         setShowForm(false);
+        // Schedule 30-min reminder notification for the new dose
+        scheduleDoseNotification(doseWithMed);
         Alert.alert("✅ Scheduled", `${selectedMed.name} added at ${formatTime(selectedTime)}.`);
       }
     } catch (e) {
@@ -168,7 +173,7 @@ export default function DoctorScheduleTab() {
 
             {sortedDoses.length === 0 ? (
               <View style={styles.empty}>
-                <Text style={styles.emptyIcon}>🗓️</Text>
+                <Ionicons name="calendar-outline" size={64} color={Colors.textMuted} style={{ marginBottom: 8 }} />
                 <Text style={styles.emptyText}>No doses scheduled today.</Text>
                 <Text style={styles.emptySubText}>Tap "+ Add Dose" to schedule one.</Text>
               </View>
@@ -198,7 +203,7 @@ export default function DoctorScheduleTab() {
                         onPress={() => handleDeleteDose(dose)}
                         accessibilityLabel="Delete dose"
                       >
-                        <Text style={styles.deleteBtnText}>✕</Text>
+                        <Ionicons name="close-circle" size={28} color={Colors.danger} />
                       </TouchableOpacity>
                     )}
                   </View>
@@ -332,7 +337,6 @@ const styles = StyleSheet.create({
   addBtnText: { fontSize: Typography.bodyL, fontWeight: Typography.bold, color: Colors.textOnDark },
 
   empty: { alignItems: "center", paddingVertical: Spacing.xl },
-  emptyIcon: { fontSize: 48, marginBottom: Spacing.sm },
   emptyText: { fontSize: Typography.bodyXL, fontWeight: Typography.semibold, color: Colors.textSecondary },
   emptySubText: { fontSize: Typography.bodyM, color: Colors.textMuted, marginTop: 4 },
 
@@ -351,7 +355,6 @@ const styles = StyleSheet.create({
   doseNotes: { fontSize: Typography.bodyS, color: Colors.warning, marginTop: 2 },
   doseTakenLabel: { fontSize: Typography.bodyS, color: Colors.taken, fontWeight: Typography.semibold, marginTop: 2 },
   deleteBtn: { width: 44, height: 44, alignItems: "center", justifyContent: "center" },
-  deleteBtnText: { fontSize: Typography.bodyXL, color: Colors.danger },
 
   // Modal
   modal: { flex: 1, backgroundColor: Colors.background },

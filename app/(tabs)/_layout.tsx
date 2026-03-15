@@ -1,17 +1,14 @@
-import { ReactNode } from "react";
 import { Tabs } from "expo-router";
-import { View } from "react-native";
+import { Ionicons } from "@expo/vector-icons";
 import { HapticTab } from "@/components/haptic-tab";
 import { Colors, Typography } from "@/constants/theme";
-import { MaterialIcons } from "@expo/vector-icons";
 
 export default function TabLayout() {
-
   return (
     <Tabs
+      initialRouteName="index"
       screenOptions={{
         headerShown: false,
-        tabBarHideOnKeyboard: true,
         tabBarActiveTintColor: Colors.tabActive,
         tabBarInactiveTintColor: Colors.tabInactive,
         tabBarButton: HapticTab,
@@ -24,9 +21,6 @@ export default function TabLayout() {
           fontSize: Typography.bodyM,
           fontWeight: Typography.semibold,
         },
-        tabBarIconStyle: {
-          marginBottom: -2,
-        },
       }}
     >
       <Tabs.Screen
@@ -34,8 +28,8 @@ export default function TabLayout() {
         options={{
           title: "Home",
           tabBarLabel: "Home",
-          tabBarIcon: ({ color }) => (
-            <MaterialIcons name="home" size={24} color={color} />
+          tabBarIcon: ({ color, size }) => (
+            <Ionicons name="home" size={size ?? 26} color={color} />
           ),
         }}
       />
@@ -44,9 +38,19 @@ export default function TabLayout() {
         options={{
           title: "Assistant",
           tabBarLabel: "Assistant",
-        tabBarIcon: ({ color }) => (
-          <MaterialIcons name="chat" size={24} color={color} />
-        ),
+          tabBarIcon: ({ color, size }) => (
+            <Ionicons name="chatbubble-ellipses" size={size ?? 26} color={color} />
+          ),
+        }}
+      />
+      <Tabs.Screen
+        name="logout"
+        options={{
+          title: "Sign Out",
+          tabBarLabel: "Sign Out",
+          tabBarIcon: ({ color, size }) => (
+            <Ionicons name="log-out-outline" size={size ?? 26} color={color} />
+          ),
         }}
       />
     </Tabs>

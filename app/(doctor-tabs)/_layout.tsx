@@ -1,11 +1,12 @@
 import { Tabs } from "expo-router";
-import { View } from "react-native";
+import { Ionicons } from "@expo/vector-icons";
 import { HapticTab } from "@/components/haptic-tab";
 import { Colors, Typography } from "@/constants/theme";
 
 export default function DoctorTabLayout() {
   return (
     <Tabs
+      initialRouteName="index"
       screenOptions={{
         headerShown: false,
         tabBarActiveTintColor: Colors.tabActive,
@@ -27,7 +28,9 @@ export default function DoctorTabLayout() {
         options={{
           title: "Patients",
           tabBarLabel: "Patients",
-          tabBarIcon: () => <TabIcon label="👥" />,
+          tabBarIcon: ({ color, size }) => (
+            <Ionicons name="people" size={size ?? 26} color={color} />
+          ),
         }}
       />
       <Tabs.Screen
@@ -35,7 +38,9 @@ export default function DoctorTabLayout() {
         options={{
           title: "Prescribe",
           tabBarLabel: "Prescribe",
-          tabBarIcon: () => <TabIcon label="💊" />,
+          tabBarIcon: ({ color, size }) => (
+            <Ionicons name="medical" size={size ?? 26} color={color} />
+          ),
         }}
       />
       <Tabs.Screen
@@ -43,18 +48,21 @@ export default function DoctorTabLayout() {
         options={{
           title: "Schedule",
           tabBarLabel: "Schedule",
-          tabBarIcon: () => <TabIcon label="🗓️" />,
+          tabBarIcon: ({ color, size }) => (
+            <Ionicons name="calendar" size={size ?? 26} color={color} />
+          ),
+        }}
+      />
+      <Tabs.Screen
+        name="logout"
+        options={{
+          title: "Sign Out",
+          tabBarLabel: "Sign Out",
+          tabBarIcon: ({ color, size }) => (
+            <Ionicons name="log-out-outline" size={size ?? 26} color={color} />
+          ),
         }}
       />
     </Tabs>
-  );
-}
-
-function TabIcon({ label }: { label: string }) {
-  const { Text } = require("react-native");
-  return (
-    <View style={{ width: 28, height: 28, alignItems: "center", justifyContent: "center" }}>
-      <Text style={{ fontSize: 22 }}>{label}</Text>
-    </View>
   );
 }

@@ -11,6 +11,7 @@ import {
   Linking,
 } from "react-native";
 import { Colors, Typography, Spacing, Radius, Shadow, MinTouchTarget } from "../constants/theme";
+import { Ionicons } from "@expo/vector-icons";
 import MedicationCard from "./MedicationCard";
 import SeedButton from "./dev/SeedButton"; // DEV ONLY — remove before production
 import {
@@ -23,6 +24,10 @@ import {
   getCareTeam,
   triggerPanicAlert,
 } from "../services/api";
+import {
+  scheduleAllDoseNotifications,
+  cancelDoseNotification,
+} from "../services/notifications";
 
 interface Props {
   userId: string;
@@ -70,6 +75,8 @@ export default function HomeScreen({ userId, patientId }: Props) {
       setCareTeam(team);
       setAllDoses(doses);
       setUpcomingDoses(upcoming);
+      // Schedule 30-min reminder notifications for all untaken doses
+      if (doses) scheduleAllDoseNotifications(doses);
     } catch {
       Alert.alert("Error", "Could not load medication data. Pull down to retry.");
     } finally {
@@ -85,6 +92,8 @@ export default function HomeScreen({ userId, patientId }: Props) {
   const handleDoseChange = (updated: DoseLogWithMed) => {
     setAllDoses((prev) => prev.map((d) => (d.id === updated.id ? updated : d)));
     setUpcomingDoses((prev) => prev.map((d) => (d.id === updated.id ? updated : d)));
+    // If dose was marked taken, cancel its pending notification
+    if (updated.taken) cancelDoseNotification(updated.id);
   };
 
   const callMember = (phone: string, name: string) => {
@@ -97,7 +106,7 @@ export default function HomeScreen({ userId, patientId }: Props) {
   const handlePanic = () => {
     Alert.alert(
       "🚨 Send Emergency Alert?",
-      "This will immediately notify the doctor and nurse on duty.",
+      "This will immediately notify your doctor.",
       [
         { text: "Cancel", style: "cancel" },
         {
@@ -181,7 +190,7 @@ export default function HomeScreen({ userId, patientId }: Props) {
           <ActivityIndicator size="large" color={Colors.textOnDark} />
         ) : (
           <>
-            <Text style={styles.panicIcon}>🚨</Text>
+            <Ionicons name="warning" size={44} color={Colors.textOnDark} style={{ marginBottom: 8 }} />
             <Text style={styles.panicTitle}>EMERGENCY ALERT</Text>
             <Text style={styles.panicSub}>Tap to notify care team immediately</Text>
           </>
@@ -200,15 +209,15 @@ export default function HomeScreen({ userId, patientId }: Props) {
             accessibilityRole="button"
           >
             <View style={[styles.careAvatar, { backgroundColor: m.role === "doctor" ? Colors.primary : Colors.accent }]}>
-              <Text style={styles.careEmoji}>{m.role === "doctor" ? "👨‍⚕️" : "👩‍⚕️"}</Text>
+              <Ionicons name={m.role === "doctor" ? "medical-outline" : "person-outline"} size={30} color={Colors.textOnDark} />
             </View>
             <Text style={styles.careName}>{m.name}</Text>
-            <Text style={styles.careRole}>{m.role === "doctor" ? (m.specialty ?? "Doctor") : "Nurse"}</Text>
+            <Text style={styles.careRole}>{m.role === "doctor" ? (m.specialty ?? "Doctor") : "Care Team"}</Text>
             {m.phone && (
               <Text style={styles.carePhone}>{m.phone}</Text>
             )}
             <View style={styles.callBtn}>
-              <Text style={styles.callBtnTxt}>📞  Call</Text>
+              <Text style={styles.callBtnTxt}>Call</Text>
             </View>
           </TouchableOpacity>
         ))}
@@ -233,7 +242,7 @@ export default function HomeScreen({ userId, patientId }: Props) {
 
       {displayed.length === 0 ? (
         <View style={styles.empty}>
-          <Text style={styles.emptyIcon}>✅</Text>
+          <Ionicons name="checkmark-circle-outline" size={72} color={Colors.accent} style={{ marginBottom: 16 }} />
           <Text style={styles.emptyTitle}>All caught up!</Text>
           <Text style={styles.emptyText}>
             {viewMode === "upcoming"
@@ -366,7 +375,6 @@ const styles = StyleSheet.create({
     ...Shadow.card,
   },
   panicLoading: { opacity: 0.75 },
-  panicIcon: { fontSize: 44, marginBottom: Spacing.xs },
   panicTitle: { fontSize: Typography.displayM, fontWeight: Typography.bold, color: Colors.textOnDark, letterSpacing: 1.5 },
   panicSub: { fontSize: Typography.bodyM, color: Colors.textOnDark + "BB", marginTop: 4 },
 
@@ -377,7 +385,6 @@ const styles = StyleSheet.create({
   careRow: { flexDirection: "row", gap: Spacing.md, marginBottom: Spacing.xl },
   careCard: { flex: 1, backgroundColor: Colors.surface, borderRadius: Radius.lg, padding: Spacing.md, alignItems: "center", ...Shadow.card },
   careAvatar: { width: 64, height: 64, borderRadius: Radius.full, alignItems: "center", justifyContent: "center", marginBottom: Spacing.sm },
-  careEmoji: { fontSize: 30 },
   careName: { fontSize: Typography.bodyM, fontWeight: Typography.bold, color: Colors.textPrimary, textAlign: "center" },
   careRole: { fontSize: Typography.bodyS, color: Colors.textSecondary, textAlign: "center", marginBottom: 2 },
   carePhone: { fontSize: Typography.bodyS, color: Colors.textMuted, textAlign: "center", marginBottom: Spacing.sm },
@@ -391,7 +398,6 @@ const styles = StyleSheet.create({
 
   // Empty
   empty: { alignItems: "center", paddingVertical: Spacing.xxl },
-  emptyIcon: { fontSize: 72, marginBottom: Spacing.md },
   emptyTitle: { fontSize: Typography.displayM, fontWeight: Typography.bold, color: Colors.accent, marginBottom: Spacing.sm },
   emptyText: { fontSize: Typography.bodyL, color: Colors.textSecondary, textAlign: "center", lineHeight: Typography.bodyL * 1.6, maxWidth: 280 },
 

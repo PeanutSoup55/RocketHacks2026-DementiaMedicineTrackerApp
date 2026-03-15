@@ -24,7 +24,7 @@ import { auth, db } from "../config/firebase";
 
 // ---- Types ----
 
-export type UserRole = "doctor" | "nurse";
+export type UserRole = "doctor" | "patient";
 
 export interface User {
   id: string;
@@ -121,55 +121,42 @@ export async function loginUser(
  * Register with Firebase Auth, create a doc in Medtrack_Users,
  * then look up the doctor by email to find the patientId.
  */
-export async function registerUser(params: {
+/**
+ * Register a PATIENT — creates their own Auth account and a
+ * Medtrack_Users doc linked to their existing Medtrack_Patients record.
+ * The patient must already exist in Medtrack_Patients (created by doctor).
+ * They identify themselves by the patientId the doctor gives them.
+ */
+export async function registerPatient(params: {
   name: string;
   email: string;
   password: string;
-  doctorEmail: string;
-  role: UserRole;
+  patientId: string;  // given to them by their doctor
 }): Promise<{ user: User; patient: Patient } | null> {
   try {
-    // 1. Find the doctor by email in Medtrack_Users
-    const doctorQuery = query(
-      collection(db, "Medtrack_Users"),
-      where("email", "==", params.doctorEmail.toLowerCase()),
-      where("role", "==", "doctor")
-    );
-    const doctorSnap = await getDocs(doctorQuery);
-    if (doctorSnap.empty) {
-      console.error("registerUser: no doctor found with email", params.doctorEmail);
+    // 1. Verify the patient record exists
+    const patient = await getPatient(params.patientId);
+    if (!patient) {
+      console.error("registerPatient: no patient found with id", params.patientId);
       return null;
     }
-    const doctorDoc = doctorSnap.docs[0];
-    const patientId = doctorDoc.data().patientId as string;
 
     // 2. Create Firebase Auth account
-    const credential = await createUserWithEmailAndPassword(
-      auth,
-      params.email,
-      params.password
-    );
+    const credential = await createUserWithEmailAndPassword(auth, params.email, params.password);
     const uid = credential.user.uid;
 
-    // 3. Write user doc to Medtrack_Users
+    // 3. Write Medtrack_Users doc with role: patient
     const newUser: Omit<User, "id"> = {
       name: params.name,
       email: params.email.toLowerCase(),
-      role: params.role,
-      patientId,
+      role: "patient",
+      patientId: params.patientId,
     };
-    await setDoc(doc(db, "Medtrack_Users", uid), {
-      ...newUser,
-      createdAt: serverTimestamp(),
-    });
-
-    // 4. Fetch the linked patient
-    const patient = await getPatient(patientId);
-    if (!patient) return null;
+    await setDoc(doc(db, "Medtrack_Users", uid), { ...newUser, createdAt: serverTimestamp() });
 
     return { user: { id: uid, ...newUser }, patient };
   } catch (e: any) {
-    console.error("registerUser failed:", e.code, e.message);
+    console.error("registerPatient failed:", e.code, e.message);
     return null;
   }
 }
@@ -216,7 +203,7 @@ export async function getCareTeamMember(userId: string): Promise<User | null> {
 }
 
 /**
- * Returns all users (doctors + nurses) assigned to a patient.
+ * Returns all users (doctors) assigned to a patient.
  * Queries Medtrack_Users where patientId == patientId.
  */
 export async function getCareTeam(patientId: string): Promise<User[]> {
@@ -373,25 +360,116 @@ export async function undoMarkDoseTaken(doseLogId: string): Promise<DoseLog | nu
 // AI CHATBOT  →  still hits your backend endpoint if you add one
 //               for now returns a helpful scheduling message
 // ============================================================
+// AI CHATBOT  →  Claude claude-haiku-4-5-20251001
+// ============================================================
+
+// Store your key in a .env file as EXPO_PUBLIC_ANTHROPIC_KEY
+// For now paste your new key here after rotating it:
+const ANTHROPIC_KEY = "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";
+
+const SYSTEM_PROMPT = `You are MedTrack Scheduling Assistant, a helpful tool for caregivers and patients at a nursing home.
+
+Your ONLY role is to help with MEDICATION SCHEDULING — timing medications around meals, physical therapy, appointments, sleep, and other daily activities.
+
+STRICT RULES:
+- You NEVER give medical advice, diagnoses, or treatment recommendations
+- You NEVER suggest changing dosages or medications
+- You NEVER comment on whether a medication is appropriate
+- If asked for medical advice, firmly but kindly redirect: "I can only help with scheduling. Please contact your doctor for medical questions."
+- Keep responses concise and clear — many users are elderly or caregivers
+
+You have access to the patient's current medication schedule which will be provided in the first message.`;
 
 export async function sendChatMessage(params: {
   message: string;
   conversationHistory: { role: "user" | "assistant"; content: string }[];
   patientId: string;
 }): Promise<{ reply: string }> {
-  // When you have a backend AI endpoint, replace this with a fetch call.
-  // Firebase does not handle AI — this stays as a direct API call.
-  // Example:
-  // const res = await fetch("https://your-ai-endpoint/chat", {
-  //   method: "POST",
-  //   headers: { "Content-Type": "application/json" },
-  //   body: JSON.stringify(params),
-  // });
-  // return res.json();
+  try {
+    // Fetch patient + full medication schedule fresh every message
+    const today = new Date().toISOString().split("T")[0];
+    const [patient, doses, medications] = await Promise.all([
+      getPatient(params.patientId),
+      getDoseLogsForDate(params.patientId, today),
+      getPatientMedications(params.patientId),
+    ]);
 
-  return {
-    reply: "I can help you think through medication timing. What would you like to schedule around?",
-  };
+    // Build schedule summary
+    const scheduleLines = doses.length === 0
+      ? "No medications scheduled today."
+      : doses
+          .sort((a, b) => a.scheduledTime.localeCompare(b.scheduledTime))
+          .map((d) => {
+            const [h, m] = d.scheduledTime.split(":").map(Number);
+            const ampm = h >= 12 ? "PM" : "AM";
+            const hour = h % 12 === 0 ? 12 : h % 12;
+            const time = `${hour}:${String(m).padStart(2, "0")} ${ampm}`;
+            const status = d.taken ? "already taken" : "pending";
+            return `  ${time} — ${d.medication.name} ${d.medication.dosage} (${status})${d.notes ? `, note: ${d.notes}` : ""}`;
+          })
+          .join("\n");
+
+    // Build full medication list with details
+    const medLines = medications.length === 0
+      ? "No active medications."
+      : medications.map((m) =>
+          `  - ${m.name} (${m.brandName}) ${m.dosage} ${m.form} — treats: ${m.treatsCondition} — instructions: ${m.instructions}`
+        ).join("\n");
+
+    // Inject patient context into the system prompt on every request
+    const systemWithContext = `${SYSTEM_PROMPT}
+
+--- PATIENT CONTEXT (do not repeat this back to the user) ---
+Patient name: ${patient?.name ?? "Unknown"}
+Room: ${patient?.roomNumber ?? "Unknown"}
+Conditions: ${patient?.conditions?.join(", ") ?? "Unknown"}
+Allergies: ${patient?.allergies?.join(", ") ?? "None"}
+
+TODAY'S DOSE SCHEDULE (${today}):
+${scheduleLines}
+
+ALL ACTIVE MEDICATIONS:
+${medLines}
+--- END PATIENT CONTEXT ---`;
+
+    // Build message array — history first, then new message
+    const apiMessages = [
+      ...params.conversationHistory.map((m) => ({
+        role: m.role as "user" | "assistant",
+        content: m.content,
+      })),
+      { role: "user" as const, content: params.message },
+    ];
+
+    const res = await fetch("https://api.anthropic.com/v1/messages", {
+      method: "POST",
+      headers: {
+        "Content-Type":      "application/json",
+        "x-api-key":         ANTHROPIC_KEY,
+        "anthropic-version": "2023-06-01",
+        "anthropic-dangerous-direct-browser-calls": "true",
+      },
+      body: JSON.stringify({
+        model:      "claude-haiku-4-5-20251001",
+        max_tokens: 500,
+        system:     systemWithContext,
+        messages:   apiMessages,
+      }),
+    });
+
+    if (!res.ok) {
+      const err = await res.text();
+      console.error("Claude API error:", res.status, err);
+      return { reply: "I\'m having trouble connecting right now. Please try again in a moment." };
+    }
+
+    const data = await res.json();
+    const reply = data?.content?.[0]?.text ?? "I didn\'t get a response. Please try again.";
+    return { reply };
+  } catch (e) {
+    console.error("sendChatMessage failed:", e);
+    return { reply: "I\'m having trouble connecting right now. Please try again in a moment." };
+  }
 }
 
 // ============================================================

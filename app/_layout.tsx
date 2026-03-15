@@ -14,6 +14,13 @@ export let globalUserId: string | null = null;
 export let globalPatientId: string | null = null;
 export let globalUserRole: UserRole | null = null;
 
+// Called by logout screen to reset all auth state
+export function clearGlobalAuth() {
+  globalUserId    = null;
+  globalPatientId = null;
+  globalUserRole  = null;
+}
+
 export default function RootLayout() {
   const [userId, setUserId]       = useState<string | null>(null);
   const [patientId, setPatientId] = useState<string | null>(null);
@@ -37,6 +44,14 @@ export default function RootLayout() {
         } catch (e) {
           console.error("Auth state restore failed:", e);
         }
+      } else {
+        // User signed out — reset all state, AuthScreen will show automatically
+        globalUserId    = null;
+        globalPatientId = null;
+        globalUserRole  = null;
+        setUserId(null);
+        setPatientId(null);
+        setRole(null);
       }
       setChecking(false);
     });
@@ -73,9 +88,9 @@ export default function RootLayout() {
     <>
       <StatusBar style="light" />
       <Stack>
-        {/* Nurse/caregiver app */}
+        {/* Patient + Nurse app — medication home view */}
         <Stack.Screen name="(tabs)"        options={{ headerShown: false }} />
-        {/* Doctor app */}
+        {/* Doctor app — patient/prescription management */}
         <Stack.Screen name="(doctor-tabs)" options={{ headerShown: false }} />
         <Stack.Screen name="modal"         options={{ presentation: "modal", title: "Modal" }} />
       </Stack>

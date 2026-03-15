@@ -8,7 +8,7 @@ import { Colors } from "@/constants/theme";
 export default function HomeTab() {
   const router = useRouter();
 
-  // Redirect doctors to their own tab group
+  // Doctors get their own tab group — patients and nurses both see this screen
   useEffect(() => {
     if (globalUserRole === "doctor") {
       router.replace("/(doctor-tabs)");
