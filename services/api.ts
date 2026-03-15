@@ -365,7 +365,7 @@ export async function undoMarkDoseTaken(doseLogId: string): Promise<DoseLog | nu
 
 // Store your key in a .env file as EXPO_PUBLIC_ANTHROPIC_KEY
 // For now paste your new key here after rotating it:
-const ANTHROPIC_KEY = "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";
+const ANTHROPIC_KEY: string = process.env.EXPO_PUBLIC_ANTHROPIC_KEY ?? "";
 
 const SYSTEM_PROMPT = `You are MedTrack Scheduling Assistant, a helpful tool for caregivers and patients at a nursing home.
 
@@ -448,7 +448,7 @@ ${medLines}
         "x-api-key":         ANTHROPIC_KEY,
         "anthropic-version": "2023-06-01",
         "anthropic-dangerous-direct-browser-calls": "true",
-      },
+      } as Record<string, string>,
       body: JSON.stringify({
         model:      "claude-haiku-4-5-20251001",
         max_tokens: 500,
