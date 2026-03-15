@@ -1,24 +1,17 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import {
-  ActivityIndicator,
-  ScrollView,
-  StyleSheet,
+  View,
   Text,
   TextInput,
   TouchableOpacity,
-  View,
+  ScrollView,
+  StyleSheet,
+  ActivityIndicator,
   KeyboardAvoidingView,
   Platform,
 } from "react-native";
-
-import {
-  Colors,
-  MinTouchTarget,
-  Radius,
-  Shadow,
-  Spacing,
-  Typography,
-} from "../constants/theme";
+import { Colors, Typography, Spacing, Radius, Shadow, MinTouchTarget } from "../constants/theme";
+import { Ionicons } from "@expo/vector-icons";
 import { sendChatMessage } from "../services/api";
 
 interface Props {
@@ -58,10 +51,7 @@ export default function ChatbotScreen({ patientId }: Props) {
   const scrollRef = useRef<ScrollView>(null);
 
   useEffect(() => {
-    const t = setTimeout(
-      () => scrollRef.current?.scrollToEnd({ animated: true }),
-      80,
-    );
+    const t = setTimeout(() => scrollRef.current?.scrollToEnd({ animated: true }), 80);
     return () => clearTimeout(t);
   }, [messages]);
 
@@ -69,12 +59,7 @@ export default function ChatbotScreen({ patientId }: Props) {
     const body = (text ?? input).trim();
     if (!body || loading) return;
 
-    const userMsg: Message = {
-      id: `u_${Date.now()}`,
-      role: "user",
-      content: body,
-      ts: new Date(),
-    };
+    const userMsg: Message = { id: `u_${Date.now()}`, role: "user", content: body, ts: new Date() };
     setMessages((prev) => [...prev, userMsg]);
     setInput("");
     setLoading(true);
@@ -84,20 +69,11 @@ export default function ChatbotScreen({ patientId }: Props) {
         .filter((m) => m.id !== "welcome")
         .map((m) => ({ role: m.role, content: m.content }));
 
-      const { reply } = await sendChatMessage({
-        message: body,
-        conversationHistory: history,
-        patientId,
-      });
+      const { reply } = await sendChatMessage({ message: body, conversationHistory: history, patientId });
 
       setMessages((prev) => [
         ...prev,
-        {
-          id: `a_${Date.now()}`,
-          role: "assistant",
-          content: reply,
-          ts: new Date(),
-        },
+        { id: `a_${Date.now()}`, role: "assistant", content: reply, ts: new Date() },
       ]);
     } catch {
       setMessages((prev) => [
@@ -105,8 +81,7 @@ export default function ChatbotScreen({ patientId }: Props) {
         {
           id: `err_${Date.now()}`,
           role: "assistant",
-          content:
-            "Sorry, I couldn't connect right now. Please try again in a moment.",
+          content: "Sorry, I couldn't connect right now. Please try again in a moment.",
           ts: new Date(),
         },
       ]);
@@ -118,30 +93,26 @@ export default function ChatbotScreen({ patientId }: Props) {
   const showQuickPrompts = messages.length <= 2;
 
   return (
-  <KeyboardAvoidingView
-    style={{ flex: 1 }}
-    behavior={Platform.OS === "ios" ? "padding" : "height"}
-    keyboardVerticalOffset={90}
-  >
-    <View style={styles.outer}>
-
+    <KeyboardAvoidingView
+      style={styles.outer}
+      behavior={Platform.OS === "ios" ? "padding" : "height"}
+      keyboardVerticalOffset={Platform.OS === "ios" ? 88 : 0}
+    >
       {/* Header */}
       <View style={styles.header}>
         <View style={styles.botAvatar}>
-          <Text style={styles.botEmoji}>🤖</Text>
+          <Ionicons name="sparkles" size={28} color={Colors.primary} />
         </View>
         <View>
           <Text style={styles.headerTitle}>Scheduling Assistant</Text>
-          <Text style={styles.headerSub}>
-            Timing help only — not medical advice
-          </Text>
+          <Text style={styles.headerSub}>Timing help only — not medical advice</Text>
         </View>
       </View>
 
       {/* Disclaimer */}
       <View style={styles.disclaimer}>
         <Text style={styles.disclaimerTxt}>
-          ℹ️ For medical concerns, contact the doctor or nurse directly.
+          ℹ️  For medical concerns, contact the doctor or nurse directly.
         </Text>
       </View>
 
@@ -155,36 +126,18 @@ export default function ChatbotScreen({ patientId }: Props) {
         {messages.map((msg) => (
           <View
             key={msg.id}
-            style={[
-              styles.bubbleWrap,
-              msg.role === "user" ? styles.userWrap : styles.asstWrap,
-            ]}
+            style={[styles.bubbleWrap, msg.role === "user" ? styles.userWrap : styles.asstWrap]}
           >
             {msg.role === "assistant" && (
               <View style={styles.miniAvatar}>
-                <Text style={{ fontSize: 16 }}>🤖</Text>
+                <Ionicons name="sparkles" size={16} color={Colors.primary} />
               </View>
             )}
-            <View
-              style={[
-                styles.bubble,
-                msg.role === "user" ? styles.userBubble : styles.asstBubble,
-              ]}
-            >
-              <Text
-                style={[
-                  styles.bubbleTxt,
-                  msg.role === "user" ? styles.userTxt : styles.asstTxt,
-                ]}
-              >
+            <View style={[styles.bubble, msg.role === "user" ? styles.userBubble : styles.asstBubble]}>
+              <Text style={[styles.bubbleTxt, msg.role === "user" ? styles.userTxt : styles.asstTxt]}>
                 {msg.content}
               </Text>
-              <Text
-                style={[
-                  styles.ts,
-                  msg.role === "user" ? styles.userTs : styles.asstTs,
-                ]}
-              >
+              <Text style={[styles.ts, msg.role === "user" ? styles.userTs : styles.asstTs]}>
                 {fmtTime(msg.ts)}
               </Text>
             </View>
@@ -194,11 +147,9 @@ export default function ChatbotScreen({ patientId }: Props) {
         {loading && (
           <View style={[styles.bubbleWrap, styles.asstWrap]}>
             <View style={styles.miniAvatar}>
-              <Text style={{ fontSize: 16 }}>🤖</Text>
+              <Ionicons name="sparkles" size={16} color={Colors.primary} />
             </View>
-            <View
-              style={[styles.bubble, styles.asstBubble, styles.typingBubble]}
-            >
+            <View style={[styles.bubble, styles.asstBubble, styles.typingBubble]}>
               <ActivityIndicator size="small" color={Colors.primary} />
               <Text style={styles.typingTxt}>Thinking…</Text>
             </View>
@@ -240,10 +191,7 @@ export default function ChatbotScreen({ patientId }: Props) {
           accessibilityLabel="Message input"
         />
         <TouchableOpacity
-          style={[
-            styles.sendBtn,
-            (!input.trim() || loading) && styles.sendBtnOff,
-          ]}
+          style={[styles.sendBtn, (!input.trim() || loading) && styles.sendBtnOff]}
           onPress={() => send()}
           disabled={!input.trim() || loading}
           accessibilityRole="button"
@@ -252,9 +200,7 @@ export default function ChatbotScreen({ patientId }: Props) {
           <Text style={styles.sendBtnTxt}>Send</Text>
         </TouchableOpacity>
       </View>
-  </View>
-</KeyboardAvoidingView>
-
+    </KeyboardAvoidingView>
   );
 }
 
@@ -279,12 +225,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
-  botEmoji: { fontSize: 28 },
-  headerTitle: {
-    fontSize: Typography.bodyXL,
-    fontWeight: Typography.bold,
-    color: Colors.textPrimary,
-  },
+  headerTitle: { fontSize: Typography.bodyXL, fontWeight: Typography.bold, color: Colors.textPrimary },
   headerSub: { fontSize: Typography.bodyS, color: Colors.textMuted },
 
   disclaimer: {
@@ -293,18 +234,10 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: Colors.warning + "40",
   },
-  disclaimerTxt: {
-    fontSize: Typography.bodyM,
-    color: Colors.warning,
-    lineHeight: Typography.bodyM * 1.5,
-  },
+  disclaimerTxt: { fontSize: Typography.bodyM, color: Colors.warning, lineHeight: Typography.bodyM * 1.5 },
 
   msgList: { flex: 1 },
-  msgContent: {
-    padding: Spacing.md,
-    gap: Spacing.md,
-    paddingBottom: Spacing.xl,
-  },
+  msgContent: { padding: Spacing.md, gap: Spacing.md, paddingBottom: Spacing.xl },
 
   bubbleWrap: { flexDirection: "row", gap: Spacing.sm, alignItems: "flex-end" },
   userWrap: { justifyContent: "flex-end" },
@@ -322,17 +255,8 @@ const styles = StyleSheet.create({
   },
   bubble: { maxWidth: "78%", borderRadius: Radius.lg, padding: Spacing.md },
   userBubble: { backgroundColor: Colors.primary, borderBottomRightRadius: 4 },
-  asstBubble: {
-    backgroundColor: Colors.surface,
-    borderBottomLeftRadius: 4,
-    ...Shadow.card,
-  },
-  typingBubble: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: Spacing.sm,
-    paddingVertical: Spacing.md,
-  },
+  asstBubble: { backgroundColor: Colors.surface, borderBottomLeftRadius: 4, ...Shadow.card },
+  typingBubble: { flexDirection: "row", alignItems: "center", gap: Spacing.sm, paddingVertical: Spacing.md },
 
   bubbleTxt: { fontSize: Typography.bodyL, lineHeight: Typography.bodyL * 1.6 },
   userTxt: { color: Colors.textOnDark },
@@ -342,18 +266,10 @@ const styles = StyleSheet.create({
   userTs: { color: Colors.textOnDark + "90", textAlign: "right" },
   asstTs: { color: Colors.textMuted },
 
-  typingTxt: {
-    fontSize: Typography.bodyM,
-    color: Colors.textMuted,
-    fontStyle: "italic",
-  },
+  typingTxt: { fontSize: Typography.bodyM, color: Colors.textMuted, fontStyle: "italic" },
 
   chipsScroll: { maxHeight: 58, flexShrink: 0 },
-  chipsContent: {
-    paddingHorizontal: Spacing.md,
-    paddingVertical: Spacing.sm,
-    gap: Spacing.sm,
-  },
+  chipsContent: { paddingHorizontal: Spacing.md, paddingVertical: Spacing.sm, gap: Spacing.sm },
   chip: {
     backgroundColor: Colors.primary + "14",
     borderRadius: Radius.full,
@@ -364,11 +280,7 @@ const styles = StyleSheet.create({
     minHeight: 42,
     justifyContent: "center",
   },
-  chipTxt: {
-    fontSize: Typography.bodyM,
-    color: Colors.primary,
-    fontWeight: Typography.semibold,
-  },
+  chipTxt: { fontSize: Typography.bodyM, color: Colors.primary, fontWeight: Typography.semibold },
 
   inputRow: {
     flexDirection: "row",
@@ -402,9 +314,5 @@ const styles = StyleSheet.create({
     ...Shadow.card,
   },
   sendBtnOff: { backgroundColor: Colors.textMuted },
-  sendBtnTxt: {
-    fontSize: Typography.bodyL,
-    fontWeight: Typography.bold,
-    color: Colors.textOnDark,
-  },
+  sendBtnTxt: { fontSize: Typography.bodyL, fontWeight: Typography.bold, color: Colors.textOnDark },
 });

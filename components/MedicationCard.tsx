@@ -11,6 +11,7 @@ import {
   Alert,
 } from "react-native";
 import { Colors, Typography, Spacing, Radius, Shadow, MinTouchTarget } from "../constants/theme";
+import { Ionicons } from "@expo/vector-icons";
 import { DoseLogWithMed, markDoseTaken, undoMarkDoseTaken } from "../services/api";
 
 if (Platform.OS === "android" && UIManager.setLayoutAnimationEnabledExperimental) {
@@ -163,7 +164,7 @@ export default function MedicationCard({ doseLog, userId, onStatusChange }: Prop
         onPress={toggleExpanded}
         accessibilityLabel={expanded ? "Hide medication details" : "Show medication details"}
       >
-        <Text style={styles.expandBtnTxt}>{expanded ? "Hide Details  ▲" : "Show Details  ▼"}</Text>
+        <Text style={styles.expandBtnTxt}>{expanded ? "Hide Details" : "Show Details"}</Text>
       </TouchableOpacity>
 
       {/* ── Expanded detail ── */}

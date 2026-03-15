@@ -3,7 +3,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { HapticTab } from "@/components/haptic-tab";
 import { Colors, Typography } from "@/constants/theme";
 
-export default function TabLayout() {
+export default function DoctorTabLayout() {
   return (
     <Tabs
       initialRouteName="index"
@@ -26,20 +26,30 @@ export default function TabLayout() {
       <Tabs.Screen
         name="index"
         options={{
-          title: "Home",
-          tabBarLabel: "Home",
+          title: "Patients",
+          tabBarLabel: "Patients",
           tabBarIcon: ({ color, size }) => (
-            <Ionicons name="home" size={size ?? 26} color={color} />
+            <Ionicons name="people" size={size ?? 26} color={color} />
           ),
         }}
       />
       <Tabs.Screen
-        name="chat"
+        name="prescribe"
         options={{
-          title: "Assistant",
-          tabBarLabel: "Assistant",
+          title: "Prescribe",
+          tabBarLabel: "Prescribe",
           tabBarIcon: ({ color, size }) => (
-            <Ionicons name="chatbubble-ellipses" size={size ?? 26} color={color} />
+            <Ionicons name="medical" size={size ?? 26} color={color} />
+          ),
+        }}
+      />
+      <Tabs.Screen
+        name="schedule"
+        options={{
+          title: "Schedule",
+          tabBarLabel: "Schedule",
+          tabBarIcon: ({ color, size }) => (
+            <Ionicons name="calendar" size={size ?? 26} color={color} />
           ),
         }}
       />
